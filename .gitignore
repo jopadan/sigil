@@ -18,3 +18,10 @@ build-vc2015-win64
 # explicitly ignore the freetype and glfw source folders
 deps/freetype2
 deps/glfw
+
+CMakeCache.txt
+cmake_install.cmake
+libsigil.so
+CMakeLists.txt
+CMakeFiles
+install_manifest.txt

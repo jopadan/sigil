@@ -1,6 +1,7 @@
 #include "GLFW/glfw3.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifdef __MINGW32__
 	#include <windows.h>
@@ -39,7 +40,7 @@ void sliOpenWindow(
 	sliProgramWindow = glfwCreateWindow(width, height, title, fullScreen ? glfwGetPrimaryMonitor() : NULL, NULL);
 	if (sliProgramWindow == NULL) {
 		fprintf(stderr, "Failed to create the window. Make sure your system supports OpenGL 3.2\n");
-		exit(1);
+		exit(EXIT_FAILURE);
 	}
 	glfwMakeContextCurrent(sliProgramWindow);
 	glfwSwapInterval(1);

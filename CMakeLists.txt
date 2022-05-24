@@ -15,6 +15,7 @@ set(SIGIL_VERSION_REVISION 0)
 
 # defaults for libraries we use
 set(USE_GLFW OFF)
+set(USE_OSLIBMODV2 OFF)
 set(USE_GLES OFF)
 
 # print our version number
@@ -40,9 +41,6 @@ set(
 	src/internal/sprite
 	src/internal/text
 	src/internal/triangle
-	src/libdrawtext/drawgl			# from the handy libdrawtext library: http://nuclear.mutantstargoat.com/sw/libdrawtext/
-	src/libdrawtext/font
-	src/libdrawtext/utf8
 	src/soil/image_DXT				# from the handy SOIL library: http://www.lonesock.net/soil.html
 	src/soil/image_helper
 	src/soil/SOIL
@@ -94,9 +92,7 @@ if(FOUND_BCM)
 
 	# make sure we get the include directories we need
 	include_directories(/usr/include /usr/local/include)
-
 else()
-
 	# use the GLFW- and GL-based version of SIGIL
 	set(SIGIL_SOURCE ${SIGIL_SOURCE} src/internal/window_glfw)
 	set(SIGIL_SOURCE ${SIGIL_SOURCE} src/internal/shaders_gl)
@@ -107,6 +103,31 @@ else()
 	# tell config.h that we don't need GLES
 	set(USE_GLES OFF)
 
+endif()
+
+#--------------------------------------------------------------------
+# detect Sony PSP platform
+#--------------------------------------------------------------------
+
+# the presence of oslib.h means we're probably running on an Sony PSP OSLib MODv2
+find_file(FOUND_PSP oslib.h /usr/include)
+if(FOUND_PSP)
+	message(STATUS "Detected a Sony PSP OSLib MODv2 platform (oslib.h was found)")
+else()
+	message(STATUS "Did NOT detect a Sony PSP OSLib MODv2 platform (oslib.h not found)")
+endif()
+
+if(FOUND_PSP)
+	# use the OSLibModV2- and GL-based version of SIGIL
+	set(SIGIL_SOURCE ${SIGIL_SOURCE} src/internal/window_osl)
+	set(SIGIL_SOURCE ${SIGIL_SOURCE} src/internal/shaders_gl)
+
+	# tell config.h to use OSLIBMODV2, not PIGU
+	set(USE_OSLIBMODV2 ON)
+	set(USE_GLFW OFF)
+	# tell config.h that we don't need GLES
+	set(USE_GLES OFF)
+	
 endif()
 
 # now that we have all the SIGIL source files, add them to the SIGIL shared lib
@@ -127,14 +148,14 @@ if(USE_GLFW)
 	# build GLFW from source
 	# add_subdirectory(${CMAKE_SOURCE_DIR}/deps/glfw)
 	# include_directories(${CMAKE_SOURCE_DIR}/deps/glfw/include)
-	target_link_libraries(${PROJECT_NAME} glfw)
-
+	target_link_libraries(${PROJECT_NAME} glfw drawtext)
+elseif(USE_OSLIBMODV2)
+	target_link_libraries(${PROJECT_NAME} oslib)
 else()
-
 	# use the cmake file we added to PIGU
 	add_subdirectory(${CMAKE_SOURCE_DIR}/deps/pigu)
 	include_directories(${CMAKE_SOURCE_DIR}/deps/pigu/include)
-	target_link_libraries(${PROJECT_NAME} pigu ${PIGU_LIBRARIES})
+	target_link_libraries(${PROJECT_NAME} pigu ${PIGU_LIBRARIES} drawtext)
 
 endif()
 
@@ -148,14 +169,14 @@ if(USE_GLES)
 	# add in the GLES 2.0 libraries and other dependencies
 	include_directories(/opt/vc/include)
 	find_library(GLES_LIBS NAMES GLESv2 EGL bcm_host vcos rt PATHS /opt/vc/lib)
-	target_link_libraries(${PROJECT_NAME} ${GLES_LIBS})
+	target_link_libraries(${PROJECT_NAME} ${GLES_LIBS} drawtext)
 
 else()
 
 	# add in the GLEW libraries
 	find_package(GLEW REQUIRED)
 	include_directories(${GLEW_INCLUDE_DIRS})
-	target_link_libraries(${PROJECT_NAME} ${GLEW_LIBRARIES})
+	target_link_libraries(${PROJECT_NAME} ${GLEW_LIBRARIES} drawtext)
 
 endif()
 
@@ -210,10 +231,10 @@ else()
 
 	find_package(OpenGL REQUIRED)
 	target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
-
+if(APPLE)
 	find_library(COREFOUNDATION_LIBRARY CoreFoundation)
 	target_link_libraries(${PROJECT_NAME} ${COREFOUNDATION_LIBRARY})
-
+endif()
 endif()
 
 #--------------------------------------------------------------------
